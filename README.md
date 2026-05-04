@@ -92,7 +92,9 @@ bash scripts/check-endpoint.sh         # Bash
 
 | Example | Description |
 |---|---|
-| [examples/ollama-litellm/](examples/ollama-litellm/README.md) | Run a local Ollama model with LiteLLM as an Anthropic-format proxy |
+| [examples/ollama-litellm/](examples/ollama-litellm/README.md) | Local Ollama model with LiteLLM as an Anthropic-format proxy |
+| [examples/vllm/](examples/vllm/README.md) | vLLM inference server, with or without a LiteLLM proxy |
+| [examples/docker-model-runner/](examples/docker-model-runner/README.md) | Docker Desktop's built-in model runner via LiteLLM proxy |
 | [examples/CLAUDE.md](examples/CLAUDE.md) | Safe-mode CLAUDE.md to constrain the agent in untested setups |
 
 ---
@@ -101,8 +103,9 @@ bash scripts/check-endpoint.sh         # Bash
 
 Planned examples and improvements — contributions welcome:
 
-- [ ] vLLM direct example
-- [ ] Docker Model Runner example
+- [x] Ollama + LiteLLM example
+- [x] vLLM example
+- [x] Docker Model Runner example
 - [ ] LiteLLM cloud gateway example (route to Bedrock, Vertex, or Azure)
 - [ ] Expanded endpoint compatibility tests
 
