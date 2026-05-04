@@ -17,6 +17,47 @@ Use [Claude Code](https://claude.ai/code) as your terminal coding agent, routed 
 
 ---
 
+## Demo flow
+
+Already have a local model endpoint running? This is the shortest path to Claude Code.
+
+> Your endpoint must speak the [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) format. If it only speaks the OpenAI format (e.g. plain Ollama or plain vLLM), add a [LiteLLM proxy](examples/ollama-litellm/README.md) first.
+
+**PowerShell**
+```powershell
+# 1. Copy the env file
+Copy-Item .env.example .env
+
+# 2. Set your endpoint — open .env and edit this line:
+#    ANTHROPIC_BASE_URL=http://localhost:4000
+
+# 3. Check the endpoint is reachable
+.\scripts\check-endpoint.ps1
+
+# 4. Launch Claude Code
+.\scripts\run-claude-local.ps1
+```
+
+**Bash (Linux / macOS / WSL)**
+```bash
+# 1. Copy the env file
+cp .env.example .env
+
+# 2. Set your endpoint — open .env and edit this line:
+#    ANTHROPIC_BASE_URL=http://localhost:4000
+
+# 3. Check the endpoint is reachable
+bash scripts/check-endpoint.sh
+
+# 4. Launch Claude Code
+chmod +x scripts/run-claude-local.sh
+./scripts/run-claude-local.sh
+```
+
+Don't have an endpoint yet? Start with the [Ollama + LiteLLM example](examples/ollama-litellm/README.md) — it walks through getting a local model running from scratch.
+
+---
+
 ## Who this is for
 
 - Developers who want to run Claude Code against a **local or self-hosted model** — for privacy, offline use, or cost reasons
