@@ -1,0 +1,37 @@
+# LiteLLM proxy configuration for Ollama
+#
+# This config tells LiteLLM to accept requests at http://localhost:4000
+# and forward them to a local Ollama instance at http://localhost:11434.
+#
+# Usage:
+#   litellm --config examples/ollama-litellm/litellm_config.yaml --port 4000
+#
+# To use a different model:
+#   1. Pull it first: ollama pull <model-name>
+#   2. Change both `model_name` and the `ollama/` suffix in `model` below.
+#   3. Update ANTHROPIC_MODEL in your .env to match `model_name`.
+
+model_list:
+  - model_name: llama3.2
+    litellm_params:
+      model: ollama/llama3.2
+      api_base: http://localhost:11434
+
+# Uncomment and adjust to add more models.
+# Claude Code will use whichever model_name matches ANTHROPIC_MODEL in your .env.
+#
+#  - model_name: qwen2.5-coder
+#    litellm_params:
+#      model: ollama/qwen2.5-coder
+#      api_base: http://localhost:11434
+#
+#  - model_name: mistral
+#    litellm_params:
+#      model: ollama/mistral
+#      api_base: http://localhost:11434
+
+litellm_settings:
+  # Drop parameters that Ollama doesn't understand (e.g. Anthropic-specific fields).
+  drop_params: true
+  # Return a helpful error if the model isn't available in Ollama instead of hanging.
+  request_timeout: 120
