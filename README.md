@@ -1,132 +1,143 @@
 # claude-code-local-runner
 
-Run [Claude Code](https://claude.ai/code) against a local or self-hosted model endpoint — no Anthropic cloud required for the model backend.
+Use [Claude Code](https://claude.ai/code) as your terminal coding agent, routed to a local or self-hosted Anthropic-compatible endpoint instead of Anthropic's hosted API.
+
+> **Not sure what that means?** See [docs/quickstart.md](docs/quickstart.md) — it explains the idea in plain language and gets you running in five steps.
 
 ---
 
-## What this is
+## Start here
 
-Claude Code is Anthropic's AI coding agent (CLI). By default it calls Anthropic's hosted API. This repo shows how to point it at a **different** Anthropic-compatible endpoint using the `ANTHROPIC_BASE_URL` environment variable.
-
-That endpoint can be:
-- A local model server (vLLM, Ollama with an OpenAI-compat layer + LiteLLM proxy, etc.)
-- A Docker Model Runner
-- LiteLLM in proxy mode
-- Any gateway that speaks the Anthropic Messages API
-
-You still run **Claude Code** as the agent. The model that answers its requests comes from wherever you point `ANTHROPIC_BASE_URL`.
-
-## What this is NOT
-
-- This does **not** run Anthropic's Claude models locally for free.
-- This does **not** bypass Anthropic's terms of service for models you don't have rights to use.
-- Local open-weight model quality is substantially different from Anthropic's hosted Claude models. Expect different (often worse) results on complex coding tasks.
-- This is not an official Anthropic product or guide.
+| Guide | What it covers |
+|---|---|
+| [docs/quickstart.md](docs/quickstart.md) | Five-step setup for any platform |
+| [docs/windows-setup.md](docs/windows-setup.md) | Detailed Windows + PowerShell walkthrough with troubleshooting |
+| [examples/ollama-litellm/](examples/ollama-litellm/README.md) | Full worked example: local model via Ollama + LiteLLM proxy |
+| [docs/model-endpoints.md](docs/model-endpoints.md) | All supported endpoint types: vLLM, Docker Model Runner, LiteLLM, remote gateways |
 
 ---
 
-## Quick start — Windows PowerShell
+## Who this is for
 
-```powershell
-# 1. Copy the example env file
-Copy-Item .env.example .env
+- Developers who want to run Claude Code against a **local or self-hosted model** — for privacy, offline use, or cost reasons
+- Teams with **data residency requirements** who can't send code to Anthropic's hosted API
+- Anyone **experimenting with open-weight models** as agentic coding assistants
+- Researchers comparing how different model backends perform on real coding tasks
 
-# 2. Edit .env with your endpoint URL
-notepad .env
+---
 
-# 3. Load the vars and start Claude Code
-. .\scripts\run-claude-local.ps1
+## What this is not
+
+- **Not free access to Anthropic's Claude models.** The model backend is whatever you're running locally — an open-weight model, a self-hosted gateway, or a third-party service. Claude Code is the coding agent; it does not include a model.
+- **Not an official Anthropic product.** This is an independent starter template.
+- **Not a guarantee of Claude-quality results.** Local open-weight models behave differently from Anthropic's hosted Claude. Expect lower reliability on complex multi-step tasks, especially with smaller models.
+- **Not a way to bypass Anthropic's terms of service** for models you don't have rights to use.
+
+---
+
+## How it works
+
+Claude Code checks the `ANTHROPIC_BASE_URL` environment variable before making any API call. When set, every request goes to that address instead of `https://api.anthropic.com`.
+
+```
+ANTHROPIC_BASE_URL=http://localhost:4000
+  -> Claude Code sends requests to http://localhost:4000/v1/messages
 ```
 
-## Quick start — Bash (Linux / macOS / WSL)
+Your local model server must speak the **Anthropic Messages API format** at `/v1/messages`. If it only speaks the OpenAI format (e.g. plain Ollama or plain vLLM), you need [LiteLLM](https://github.com/BerriAI/litellm) as a translation proxy in front of it. The [Ollama + LiteLLM example](examples/ollama-litellm/README.md) shows exactly how to do this.
+
+The helper scripts in this repo set `ANTHROPIC_BASE_URL` from your `.env` file and launch `claude` — that's the main thing they do.
+
+---
+
+## Quick start
 
 ```bash
-# 1. Copy the example env file
+# Bash (Linux / macOS / WSL)
 cp .env.example .env
-
-# 2. Edit .env with your endpoint URL
-nano .env   # or your preferred editor
-
-# 3. Make the script executable and run it
+# edit .env: set ANTHROPIC_BASE_URL to your endpoint
 chmod +x scripts/run-claude-local.sh
 ./scripts/run-claude-local.sh
 ```
 
----
-
-## How ANTHROPIC_BASE_URL works
-
-Claude Code's underlying SDK checks the `ANTHROPIC_BASE_URL` environment variable before it makes any API call. When set, every request goes to that base URL instead of `https://api.anthropic.com`.
-
-```
-ANTHROPIC_BASE_URL=http://localhost:8080
-  -> requests go to http://localhost:8080/v1/messages
-                    http://localhost:8080/v1/models
-                    etc.
+```powershell
+# PowerShell (Windows)
+Copy-Item .env.example .env
+# edit .env: set ANTHROPIC_BASE_URL to your endpoint
+.\scripts\run-claude-local.ps1
 ```
 
-The variable must be set **before** you launch `claude`. The helper scripts in this repo handle that.
+Check your endpoint is reachable before starting:
 
-## Why your endpoint must support the Anthropic Messages API
-
-Claude Code doesn't speak OpenAI's `/v1/chat/completions` format. It uses Anthropic's `/v1/messages` format with Anthropic-specific fields (`system` as a top-level key, `content` arrays, tool use blocks, etc.).
-
-If your local server speaks only the OpenAI format, you need a translation layer. [LiteLLM](https://github.com/BerriAI/litellm) in proxy mode is the most common choice — it can accept Anthropic-format requests and forward them to almost any backend.
+```bash
+bash scripts/check-endpoint.sh         # Bash
+.\scripts\check-endpoint.ps1           # PowerShell
+```
 
 ---
 
 ## Example endpoint URLs
 
-| Setup | ANTHROPIC_BASE_URL |
+| Setup | `ANTHROPIC_BASE_URL` |
 |---|---|
-| vLLM (default port) | `http://localhost:8000` |
+| vLLM | `http://localhost:8000` |
 | Ollama + LiteLLM proxy | `http://localhost:4000` |
 | Docker Model Runner | `http://localhost:12434/engines/llama.cpp/v1` |
 | LiteLLM standalone | `http://localhost:4000` |
 | Remote self-hosted gateway | `https://your-gateway.example.com` |
 
-See [docs/model-endpoints.md](docs/model-endpoints.md) for setup notes for each option.
+---
+
+## Current examples
+
+| Example | Description |
+|---|---|
+| [examples/ollama-litellm/](examples/ollama-litellm/README.md) | Run a local Ollama model with LiteLLM as an Anthropic-format proxy |
+| [examples/CLAUDE.md](examples/CLAUDE.md) | Safe-mode CLAUDE.md to constrain the agent in untested setups |
 
 ---
 
-## Verifying your endpoint
+## Roadmap
 
-```powershell
-# PowerShell
-.\scripts\check-endpoint.ps1
-```
+Planned examples and improvements — contributions welcome:
 
-```bash
-# Bash
-bash scripts/check-endpoint.sh
-```
-
-This hits `/v1/models` on your configured base URL and prints what it finds.
+- [ ] vLLM direct example
+- [ ] Docker Model Runner example
+- [ ] LiteLLM cloud gateway example (route to Bedrock, Vertex, or Azure)
+- [ ] Expanded endpoint compatibility tests
 
 ---
 
 ## Troubleshooting
 
-**`Error: ECONNREFUSED` or `connect ECONNREFUSED`**
-Your endpoint isn't running or isn't on the port you specified. Start your model server first, then re-run the helper script.
+**`connect ECONNREFUSED`**
+Your model server isn't running or is on a different port. Start it first, then re-run the check script.
 
 **`401 Unauthorized`**
-Your local server is checking `ANTHROPIC_API_KEY`. Set it to whatever value your server expects (often `"dummy"` or a token you configured).
+Your server is checking the API key. Set `ANTHROPIC_API_KEY` in `.env` to whatever value your server expects — usually `dummy` or a token you configured at startup.
 
-**`404 Not Found` on `/v1/messages`**
-Your server doesn't implement the Anthropic Messages API. You likely need a LiteLLM proxy in front of it.
+**`404` on `/v1/messages` or `/v1/models`**
+Your server doesn't implement the Anthropic Messages API. Add a LiteLLM proxy in front of it. See [examples/ollama-litellm/](examples/ollama-litellm/README.md).
 
-**Claude Code responds strangely or ignores instructions**
-Local model quality varies. Smaller models may not follow complex agentic instructions reliably. Try a larger model or one fine-tuned for instruction following.
+**Claude Code loops or ignores instructions**
+Local model quality varies. Smaller models often can't follow complex agentic tool-use reliably. Try a larger or coding-focused model (see [docs/model-endpoints.md](docs/model-endpoints.md)).
 
 **`ANTHROPIC_BASE_URL` is ignored**
-Make sure you set it *before* launching `claude`, in the same shell session. The helper scripts do this automatically. Verify with `echo $env:ANTHROPIC_BASE_URL` (PowerShell) or `echo $ANTHROPIC_BASE_URL` (Bash).
+It must be set *before* `claude` launches. The helper scripts handle this from `.env`. Verify with `echo $env:ANTHROPIC_BASE_URL` (PowerShell) or `echo $ANTHROPIC_BASE_URL` (Bash).
 
 ---
 
-## Safety notes
+## Safety and limitations
 
-When Claude Code runs against a local model, the usual hosted safety guardrails may not be present. Read [docs/safety-notes.md](docs/safety-notes.md) before using this in sensitive environments. The [examples/CLAUDE.md](examples/CLAUDE.md) file shows a conservative instruction set you can copy into your project.
+Running Claude Code against a local model means Anthropic's hosted safety guardrails are not in the loop. Read [docs/safety-notes.md](docs/safety-notes.md) before using this on a sensitive codebase.
+
+Never commit `.env` files, API keys, or logs with secrets. See [SECURITY.md](SECURITY.md) for the full checklist.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add examples, fix docs, and submit PRs safely.
 
 ---
 
