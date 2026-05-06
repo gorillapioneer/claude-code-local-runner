@@ -1,0 +1,114 @@
+name: Docs and config check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Repo health check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Verify required files exist
+        run: |
+          for f in \
+            README.md \
+            .env.example \
+            scripts/run-claude-local.ps1 \
+            scripts/check-endpoint.ps1 \
+            examples/ollama-litellm/README.md \
+            examples/ollama-litellm/litellm_config.yaml; do
+            if [ ! -f "$f" ]; then
+              echo "FAIL: required file missing: $f"
+              exit 1
+            else
+              echo "OK:   $f"
+            fi
+          done
+
+      - name: Check optional example READMEs
+        run: |
+          for f in \
+            examples/vllm/README.md \
+            examples/docker-model-runner/README.md; do
+            if [ -f "$f" ]; then
+              echo "OK:   $f"
+            else
+              echo "INFO: optional file not present (that is fine): $f"
+            fi
+          done
+
+      - name: Validate YAML files parse cleanly
+        run: |
+          python - <<'EOF'
+          import sys, pathlib
+
+          repo = pathlib.Path(".")
+          yaml_files = list(repo.glob("**/*.yaml")) + list(repo.glob("**/*.yml"))
+          yaml_files = [f for f in yaml_files if ".git" not in f.parts]
+
+          failed = False
+          for yf in sorted(yaml_files):
+            content = yf.read_text(encoding="utf-8", errors="replace")
+            if not content.strip():
+              print(f"FAIL: {yf} is empty")
+              failed = True
+              continue
+            for i, line in enumerate(content.splitlines(), 1):
+              if line.startswith("\t"):
+                print(f"FAIL: {yf}:{i} tab indentation is invalid in YAML")
+                failed = True
+                break
+            else:
+              print(f"OK:   {yf}")
+
+          if failed:
+            sys.exit(1)
+          EOF
+
+      - name: Scan docs and examples for misleading claims
+        run: |
+          python - <<'EOF'
+          import sys, pathlib
+
+          # These phrases imply the user is accessing Anthropic's Claude model
+          # locally for free, which is not what this repo does. Flag them so
+          # they get corrected before merging.
+          BANNED = [
+            "Claude runs locally",
+            "Anthropic Claude locally",
+            "free Claude locally",
+            "Claude model running locally",
+          ]
+
+          repo = pathlib.Path(".")
+          md_files = list(repo.glob("**/*.md"))
+          md_files = [f for f in md_files if ".git" not in f.parts]
+
+          found = False
+          for md in sorted(md_files):
+            content = md.read_text(encoding="utf-8", errors="replace")
+            for phrase in BANNED:
+              if phrase.lower() in content.lower():
+                print(f'FAIL: banned phrase in {md}: "{phrase}"')
+                found = True
+
+          if found:
+            print()
+            print("Correct wording: 'Claude Code with a local model endpoint'")
+            sys.exit(1)
+          else:
+            print(f"OK:   no misleading claims found in {len(md_files)} markdown files")
+          EOF
+
+      - name: Run validate_repo.py
+        run: python scripts/validate_repo.py

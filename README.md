@@ -1,5 +1,7 @@
 # claude-code-local-runner
 
+[![Docs and config check](https://github.com/gorillapioneer/claude-code-local-runner/actions/workflows/docs-and-config-check.yml/badge.svg)](https://github.com/gorillapioneer/claude-code-local-runner/actions/workflows/docs-and-config-check.yml)
+
 Use [Claude Code](https://claude.ai/code) as your terminal coding agent, routed to a local or self-hosted Anthropic-compatible endpoint instead of Anthropic's hosted API.
 
 > **Not sure what that means?** See [docs/quickstart.md](docs/quickstart.md) — it explains the idea in plain language and gets you running in five steps.
@@ -176,6 +178,24 @@ It must be set *before* `claude` launches. The helper scripts handle this from `
 Running Claude Code against a local model means Anthropic's hosted safety guardrails are not in the loop. Read [docs/safety-notes.md](docs/safety-notes.md) before using this on a sensitive codebase.
 
 Never commit `.env` files, API keys, or logs with secrets. See [SECURITY.md](SECURITY.md) for the full checklist.
+
+---
+
+## Repo health checks
+
+Every push and pull request runs a lightweight CI workflow that checks the repo is in a usable state:
+
+- **Required files** — verifies that `README.md`, `.env.example`, the helper scripts, and the Ollama + LiteLLM example files are all present.
+- **YAML validation** — checks that config files are non-empty and use correct YAML indentation (no tabs).
+- **Misleading-claims scan** — searches all markdown files for wording that incorrectly implies you are running Anthropic's Claude model locally for free. This repo uses a local *endpoint*, not Anthropic's model. The exact banned phrases are listed in `scripts/validate_repo.py`. The workflow fails if those phrases appear so they get corrected before merging.
+
+To run the checks locally:
+
+```bash
+python scripts/validate_repo.py
+```
+
+The workflow is defined in [`.github/workflows/docs-and-config-check.yml`](.github/workflows/docs-and-config-check.yml). No secrets or external services are required to run it.
 
 ---
 
